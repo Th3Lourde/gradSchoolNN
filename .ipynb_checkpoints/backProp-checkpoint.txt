@@ -1,0 +1,214 @@
+Looking backwards at the model we have:
+
+cross entropy cost function
+sigmoid
+
+5 linear layers composed of 10 hidden nodes a piece
+
+	What is the SGD of the linear layer?
+
+I believe that it would just be the transpose of the inputs, yea?
+
+Let's start with layer 1.
+
+[1x7][7x10] + [1x7]
+
+Ok so I am working on implementing gradient of a linear layer. 
+In order to do this I need to take the transpose of a vector.
+The current input is not of the right form in order to be taken the transpose of.
+How about, we use the new definition of our input, feed it into our model, and see what happens.
+
+Wow this is new. It is almost like when I first started learning how to code.
+I don't know how to think about this. It felt this way about pentesting to (it still is this way).
+What seems to work is to jump back and forth between a high level and low level thought process.
+This seems to help me segment my different levels of thought.
+
+Moving on.
+
+I changed the number of dimensions of my input. I then indexed the input and fed it to my model as usual.
+Effectively, I undid my change.
+What I should instead do is update my linear definition to be able to work with the new number of dimensions.
+
+
+A good question would be when to squeeze that extra dimension into our object. 
+It would probably be a bad idea to do it before feeding it to the model.
+When do I want the extra dimension?
+I want the extra dimension when I am trying to take the transpose of the weights. 
+So how about I just code the unsqueeze into my linear layer?
+
+So we can play with our input for the specific case and then extend it to the general case.
+
+The element of the documentation that we care about is:
+x.add_(y)
+
+Where x has more dimensions than y.
+
+
+We are wanting to add W and p. W has more dimensions than p.
+
+It worked! Hell yea.
+
+So all we need to do is multiply our input matrix by some scalars and we are good to go.
+
+Need alpha as a parameter for our linear layer
+
+I can just multiply by a scalar and everything works out ok. Sweet.
+
+All that is left is the gradient of the rest of the layers of the model.
+
+Ok so (I think) I have successfully implemented backwards() for our linear layer.
+This function requires an argument called residual, which we have yet to implement.
+
+
+This is a note for tomorrow me. Implement this shit.
+
+L,E.
+
+
+Ok so it is now tomorrow.
+
+The backprop of my linear layer is mostly done. Next up is everything
+
+1) Gradient of cost function
+2) Gradient of sigmoid and summs
+
+
+----------
+| 5.4.20 |
+----------
+
+Step one, where are we at? So we are almost done or think we are done
+with forwards propagation. We have one issue left to iron out.
+We know how the input nodes work, how the hidden nodes work, however
+we are unsure of how the output nodes work.
+
+Let's start with our neural net. Our architecture is:
+[1x7][7x5] --> [1x5]
+[1x5][5x1] --> [1x1]
+
+Each node in the hidden layer has a weight for every signal and a bias
+for the node. One bias per node, one weight per inputted signal.
+
+But what about the output node? The output node is receiving multiple
+signals from each of the hidden nodes. What does it do with these signals?
+
+One option is it just sums them.
+Another option is it multiplies each signal by a weight and then sums.
+A final option is that is multipies with weight and adds bias.
+
+So which one is correct? Time to do some research :)
+
+
+Commentary:
+So we have our data and we have our network. We passed the arguments:
+[784, 30, 10] to our network, what does this mean?
+
+Each element of our argument represents a layer in our neural network.
+The number represents the number of nodes present in said neural net.
+
+Thus, we have a 784 node input-layer, a 30 node hidden layer, and a 10-node
+output layer.
+
+Let's perform forwards propagation and see what happens.
+
+Send neural network input, 784 signals, 
+nn outputs 30 signals,
+send nn 30 signals, outputs 10 signals
+
+This doesn't really tell me anything. One good question would be to 
+find out how many weights/bias' exist in the network.
+
+This is helpful.
+
+dot(30,784) = len(30)
+
+
+So the architecture goes:
+
+[1x784][784x30] + [1x30]
+[1x30][30x10] + [1x10]
+
+Both of these are passed through a sigmoid function.
+
+So we have a 3-layer network, with two sets of bias' and weights.
+Cool. So I guess I was wrong again. Lol.
+
+Time to update our theory again.
+
+Just to be sure, let's find another source to verify what this book
+puts forth.
+
+Current Idea: Hidden layer receives the signals from the hidden nodes,
+multiplies them by weights, sums, adds bias, sigmoid, done.
+
+The network has weights and biases for the final layer, however the baises of the final layer were initialized at zero, and it wasn't passed through the activation function.
+
+So we know that the output nodes have weights, have baises, however do
+they get passed through an activation function?
+
+We have one source that says yes. We have another source that doesn't say
+no, but doesn't say yes.
+
+Let's look at Andrew Ng,
+
+Andrew Ng supports the idea that you can put an activation function
+on your output layer, however he doesn't use biases for any of his nodes.
+Interesting.
+
+Conclusion: Your hidden layer nodes can have both weights and biases.
+
+Back to our model.
+
+Should our final linear layer have a bias? Idk, let's try it and see
+what happens.
+
+So forwards prop works. Time to implement backwards prop.
+
+SGD:
+- logistic
+- sigmoid activation
+- linear layers
+
+
+Logistic:
+So Andrew Ng's derivation disagrees with mine. Looking at some else's 
+derivation. Turns out we didn't do any math wrong, but rather a later 
+step causes some things to cancel out.
+
+Let's do the derivation all of the way until a linear layer, once we are
+at a linear layer, things just stack.
+
+Things just might work the way they are now. o
+
+So I think that my gradient is working for logistic, sigmoid.
+Only thing left are the linear layers.
+
+There are three parts to updating the values of linear layers:
+1) Calculate the new parameter values
+2) Update the gradient
+3) Apply the new parameter values
+
+We do 1-2 when backwards() is called.
+
+We do 3 when updateParams() is called
+
+
+1): For now, just focus on getting one done.
+So we have a weight matrix [n x m].
+
+For each of those values we perform the following:
+
+w := w - (\alpha)(x)(residualGradient)
+
+return inp@self.w + self.b
+
+b := b - (\alpha)(1)(residualGradient)
+
+
+This is going to get tricky, because after we hit our first
+linear layer, residual will no longer be a scalar value,
+since chain rule will cause various weights to be carried to layers
+deeper into the model. Maybe we can save this for tomorrow. I should
+do my comm stuff, abstract, essay. We'll see. Might just be a good
+idea to power through, idk.
+
